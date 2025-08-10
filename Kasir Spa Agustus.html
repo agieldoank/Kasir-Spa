@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HOME SPA FAMILY - Kasir</title>
+<style>
+  body {font-family: 'Segoe UI', sans-serif; background-color: #1f1f1f; color: #fff; margin: 0;}
+  header {background-color: #ff4081; padding: 15px; text-align: center;}
+  header h1 {margin: 0; font-size: 1.8rem; font-weight: bold;}
+  header p {margin: 5px 0 0; font-size: 0.9rem; line-height: 1.4;}
+  .container {display: flex; flex-wrap: wrap; padding: 20px; gap: 20px;}
+  .form-section, .cart-section {background: #2c2c2c; padding: 20px; border-radius: 10px; flex: 1; min-width: 300px;}
+  h2 {margin-top: 0; color: #ff4081;}
+  .form-group {margin-bottom: 10px;}
+  label {display: block; font-size: 0.9rem; margin-bottom: 5px;}
+  input {width: 100%; padding: 8px; border-radius: 5px; border: none; font-size: 1rem; margin-bottom: 10px;}
+  button {background-color: #ff4081; border: none; padding: 10px 15px; color: white; font-size: 1rem; border-radius: 5px; cursor: pointer;}
+  button:hover {opacity: 0.9;}
+  table {width: 100%; border-collapse: collapse; margin-top: 10px;}
+  th, td {border-bottom: 1px solid #444; padding: 8px; text-align: left;}
+  .total {text-align: right; font-size: 1.2rem; margin-top: 10px; font-weight: bold;}
+  .fade {animation: fadeIn 0.3s;}
+  @keyframes fadeIn {from {opacity: 0;} to {opacity: 1;}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>HOME SPA FAMILY</h1>
+  <p>Alamat: Jalan Otista No.88, Ciharalang, Cijeungjing - Ciamis<br>
+  WA: 082130407112</p>
+</header>
+
+<div class="container">
+  <div class="form-section">
+    <h2>Data Customer</h2>
+    <div class="form-group">
+      <label>Nama Customer</label>
+      <input type="text" id="customerName">
+    </div>
+    <div class="form-group">
+      <label>Nomor WhatsApp</label>
+      <input type="text" id="customerWA" placeholder="Contoh: 628123456789">
+    </div>
+
+    <h2>Tambah Produk</h2>
+    <div class="form-group">
+      <label>Nama Produk</label>
+      <input type="text" id="productName">
+    </div>
+    <div class="form-group">
+      <label>Harga</label>
+      <input type="number" id="productPrice">
+    </div>
+    <div class="form-group">
+      <label>Jumlah</label>
+      <input type="number" id="productQty" value="1">
+    </div>
+    <button onclick="addProduct()">Tambah ke Keranjang</button>
+  </div>
+
+  <div class="cart-section">
+    <h2>Keranjang</h2>
+    <table id="cartTable">
+      <thead>
+        <tr>
+          <th>Produk</th>
+          <th>Harga</th>
+          <th>Qty</th>
+          <th>Subtotal</th>
+          <th>Hapus</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="form-group">
+      <label>Diskon (%)</label>
+      <input type="number" id="discount" value="0" min="0">
+    </div>
+    <div class="form-group">
+      <label>Pajak (%)</label>
+      <input type="number" id="tax" value="0" min="0">
+    </div>
+    <div class="total" id="totalAmount">Total: Rp 0</div>
+    <button onclick="clearCart()">Hapus Semua</button>
+    <button onclick="printReceipt()">Cetak Struk</button>
+  </div>
+</div>
+
+<script>
+  let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+  function renderCart() {
+    const tbody = document.querySelector("#cartTable tbody");
+    tbody.innerHTML = "";
+    let subtotalAll = 0;
+
+    cart.forEach((item, index) => {
+      const subtotal = item.price * item.qty;
+      subtotalAll += subtotal;
+      const row = document.createElement("tr");
+      row.classList.add("fade");
+      row.innerHTML = `
+        <td>${item.name}</td>
+        <td>Rp ${item.price.toLocaleString()}</td>
+        <td>${item.qty}</td>
+        <td>Rp ${subtotal.toLocaleString()}</td>
+        <td><button onclick="removeItem(${index})">❌</button></td>
+      `;
+      tbody.appendChild(row);
+    });
+
+    const discount = parseFloat(document.getElementById("discount").value) || 0;
+    const tax = parseFloat(document.getElementById("tax").value) || 0;
+
+    let total = subtotalAll - (subtotalAll * discount / 100);
+    total += (total * tax / 100);
+
+    document.getElementById("totalAmount").innerText = `Total: Rp ${total.toLocaleString()}`;
+    localStorage.setItem("cart", JSON.stringify(cart));
+  }
+
+  function addProduct() {
+    const name = document.getElementById("productName").value.trim();
+    const price = parseInt(document.getElementById("productPrice").value);
+    const qty = parseInt(document.getElementById("productQty").value);
+
+    if (!name || isNaN(price) || isNaN(qty) || qty <= 0) {
+      alert("Mohon isi semua data produk dengan benar.");
+      return;
+    }
+
+    cart.push({ name, price, qty });
+    renderCart();
+
+    document.getElementById("productName").value = "";
+    document.getElementById("productPrice").value = "";
+    document.getElementById("productQty").value = 1;
+  }
+
+  function removeItem(index) {
+    cart.splice(index, 1);
+    renderCart();
+  }
+
+  function clearCart() {
+    if (confirm("Yakin hapus semua transaksi?")) {
+      cart = [];
+      renderCart();
+    }
+  }
+
+  function printReceipt() {
+    const customerName = document.getElementById("customerName").value.trim() || "Tidak diisi";
+    const customerWA = document.getElementById("customerWA").value.trim() || "Tidak diisi";
+    
+    let receipt = "===== HOME SPA FAMILY =====\n";
+    receipt += "Alamat: Jalan Otista No.88, Ciamis - 082130407112\n";
+    const date = new Date();
+    receipt += `Tanggal: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}\n`;
+    receipt += `Customer: ${customerName}\n`;
+    receipt += `WA Customer: ${customerWA}\n\n`;
+    
+    let subtotalAll = 0;
+    cart.forEach(item => {
+      const subtotal = item.price * item.qty;
+      subtotalAll += subtotal;
+      receipt += `${item.name} x${item.qty} - Rp ${subtotal.toLocaleString()}\n`;
+    });
+
+    const discount = parseFloat(document.getElementById("discount").value) || 0;
+    const tax = parseFloat(document.getElementById("tax").value) || 0;
+
+    let total = subtotalAll - (subtotalAll * discount / 100);
+    total += (total * tax / 100);
+
+    receipt += `\nSubtotal: Rp ${subtotalAll.toLocaleString()}`;
+    receipt += `\nDiskon: ${discount}%`;
+    receipt += `\nPajak: ${tax}%`;
+    receipt += `\nTOTAL: Rp ${total.toLocaleString()}`;
+    receipt += `\n===========================`;
+    receipt += `\nTerima kasih telah berkunjung ke HOME SPA FAMILY\nKami tunggu kedatangan Anda kembali ❤️`;
+
+    const win = window.open('', '', 'width=400,height=600');
+    win.document.write(`<pre>${receipt}</pre>`);
+    win.print();
+  }
+
+  renderCart();
+  document.getElementById("discount").addEventListener("input", renderCart);
+  document.getElementById("tax").addEventListener("input", renderCart);
+</script>
+
+</body>
+</html>
